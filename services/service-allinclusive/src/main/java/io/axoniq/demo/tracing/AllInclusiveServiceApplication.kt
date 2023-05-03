@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.axoniq.demo.tracing
+package io.axoniq.demo.auctionhouse
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

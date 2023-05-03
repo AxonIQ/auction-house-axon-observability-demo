@@ -98,9 +98,9 @@ services:
       - ./axoniq.license:/axonserver/config/axoniq.license
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8024/actuator/health" ]
-      interval: 1m30s
+      interval: 5s
       timeout: 10s
-      retries: 3
+      retries: 30
   axon-server-2:
     image: axoniq/axonserver-enterprise:2023.0.0-jdk-17-dev
     ports:
@@ -120,9 +120,9 @@ services:
       - ./axoniq.license:/axonserver/config/axoniq.license
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8024/actuator/health" ]
-      interval: 1m30s
+      interval: 5s
       timeout: 10s
-      retries: 3
+      retries: 30
   axon-server-3:
     image: axoniq/axonserver-enterprise:2023.0.0-jdk-17-dev
     ports:
@@ -142,14 +142,14 @@ services:
       - ./axoniq.license:/axonserver/config/axoniq.license
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8024/actuator/health" ]
-      interval: 1m30s
+      interval: 5s
       timeout: 10s
-      retries: 3
+      retries: 30
 
   service-participants:
     image: morlack/axon-observability-service-participants
     ports:
-      - '8900-8999:8080'
+      - '8900:8080'
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=service.name\=Participants,service.version\=0.0.1,deployment.environment\=production
       - OTEL_SERVICE_NAME=Participants
@@ -174,8 +174,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#      - db-participants:/var/lib/postgresql/data
     ports:
       - '5434:5432'
 
@@ -207,8 +205,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#      - db-object-registry:/var/lib/postgresql/data
     ports:
       - '5435:5432'
 
@@ -221,7 +217,8 @@ services:
       - spring_datasource_url=jdbc:postgresql://db-auction-query:5432/postgres
     env_file:
       - application-variables.env
-
+    ports:
+      - "8083:8080"
     depends_on:
       jaeger-collector:
         condition: service_started
@@ -239,8 +236,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#      - db-auctionquery:/var/lib/postgresql/data
     ports:
       - '5436:5432'
 
@@ -272,8 +267,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#      - db-auctions:/var/lib/postgresql/data
     ports:
       - '5437:5432'
 
@@ -305,8 +298,6 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#      - db-interfaces:/var/lib/postgresql/data
     ports:
       - '5438:5432'
 

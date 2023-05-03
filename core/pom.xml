@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.axoniq.demo.tracing</groupId>
-        <artifactId>axoniq-tracing-demo</artifactId>
+        <groupId>io.axoniq.demo.auctionhouse</groupId>
+        <artifactId>axoniq-auction-demo</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>core</artifactId>
-    <name>Axon OpenTelemetry Demo core</name>
+    <name>Core Configuration</name>
     <description>Contains all business logic for the demo application</description>
 
     <dependencies>

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.axoniq.demo.tracing</groupId>
+        <groupId>io.axoniq.demo.auctionhouse</groupId>
         <artifactId>services</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
@@ -14,24 +14,24 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.axoniq.demo.tracing</groupId>
+            <groupId>io.axoniq.demo.auctionhouse</groupId>
             <artifactId>service-auction-object-registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.axoniq.demo.tracing</groupId>
+            <groupId>io.axoniq.demo.auctionhouse</groupId>
             <artifactId>service-auction-query</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.axoniq.demo.tracing</groupId>
+            <groupId>io.axoniq.demo.auctionhouse</groupId>
             <artifactId>service-auctions</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.axoniq.demo.tracing</groupId>
+            <groupId>io.axoniq.demo.auctionhouse</groupId>
             <artifactId>service-interfaces</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>io.axoniq.demo.tracing</groupId>
+            <groupId>io.axoniq.demo.auctionhouse</groupId>
             <artifactId>service-participants</artifactId>
         </dependency>
     </dependencies>
