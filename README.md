@@ -17,7 +17,9 @@ You can request a [free trial license here](https://www.axoniq.io/axon-server-tr
 
 Now, you can run this demo using `docker compose`. Please execute the following:
 ```shell
-docker compose -f infrastructure/docker-compose.yaml up -d
+docker compose -f infrastructure/full/docker-compose.yaml up -d
+# or
+docker compose -f infrastructure/light/docker-compose.yaml up -d
 ```
 
 This will run a full stack locally, with:
