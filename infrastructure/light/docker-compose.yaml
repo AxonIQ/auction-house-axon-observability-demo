@@ -144,7 +144,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-storage:/prometheus
     depends_on:
-      - axon-server-1
+      - axon-server
     ports:
       - "9090:9090"
 
@@ -176,7 +176,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - axon-server-1
+      - axon-server
       - service-auction-object-registry
       - service-auction-query
       - service-auctions
