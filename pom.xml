@@ -47,16 +47,16 @@
     </properties>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>org.axonframework.firestarter</groupId>-->
-<!--            <artifactId>firestarter-spring-starter</artifactId>-->
-<!--            <version>0.0.1-SNAPSHOT</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.axoniq.inspector</groupId>-->
-<!--            <artifactId>inspector-axon-spring-boot-starter</artifactId>-->
-<!--            <version>0.1.8</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.axonframework.firestarter</groupId>
+            <artifactId>firestarter-spring-starter</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.axoniq.inspector</groupId>
+            <artifactId>inspector-axon-spring-boot-starter</artifactId>
+            <version>0.1.8</version>
+        </dependency>
         <!-- Axon -->
         <dependency>
             <groupId>org.axonframework</groupId>
