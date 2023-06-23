@@ -10,6 +10,12 @@ Prometheus and Grafana, and [Inspector Axon](https://inspector.axoniq.io). The d
 - Axon FireStarter to introduce chaos into Axon Framework applications
 - A landing page with observability exercises and reverse-proxy links to all features and deployments
 
+## Auction House
+This auction house is special, since the partcipants are all simulated and scalable. For each auction they will decide whether they want an item, how much they want to bid, and then act.
+
+They might also sell their current items to make money!
+![Auction House](.github/img/demo.png)
+
 ## How to run
 
 There are two versions available:
@@ -44,3 +50,10 @@ This will run a full stack locally, with:
 - Service: Object Registry
 
 When everything has been booted, navigate to the [landing page](http://localhost:8080).
+
+## Tracing
+
+You can use the tracing provided by Jaeger. It will look a little like the following:
+
+
+![Tracing](.github/img/tracing.png)
