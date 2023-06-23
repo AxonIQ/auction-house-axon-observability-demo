@@ -46,6 +46,27 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.3.0</version>
+                <executions>
+                    <execution>
+                        <!-- the wget goal actually binds itself to this phase by default -->
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.23.0/opentelemetry-javaagent.jar</url>
+                            <outputFileName>opentelemetry-javaagent.jar</outputFileName>
+                            <!-- default target location, just to demonstrate the parameter -->
+                            <outputDirectory>${project.build.directory}/additionalFiles</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
