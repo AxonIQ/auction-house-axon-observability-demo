@@ -47,7 +47,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: services/service-auctions
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-auctions:latest
 
@@ -55,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: services/service-auction-object-registry
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-auction-object-registry:latest
 
@@ -63,7 +63,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: services/service-auction-query
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-auction-query:latest
 
@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: services/service-participants
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-participants:latest
 
@@ -79,7 +79,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: services/service-interfaces
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-interfaces:latest
 
@@ -89,7 +89,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: frontend-landing
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/axoniq/axon-observability-landing:latest
 
