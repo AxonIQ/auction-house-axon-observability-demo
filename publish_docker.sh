@@ -18,14 +18,14 @@
 
 cd frontend-landing
 docker build .
-docker build . -t morlack/axon-observability-landing
-docker push morlack/axon-observability-landing
+docker build . -t ghcr.io/AxonIQ/axon-observability-landing
+docker push ghcr.io/AxonIQ/axon-observability-landing
 cd ..
 
-docker push morlack/axon-observability-service-auctions
-docker push morlack/axon-observability-service-auction-query
-docker push morlack/axon-observability-service-auction-object-registry
-docker push morlack/axon-observability-service-participants
-docker push morlack/axon-observability-service-interfaces
-docker push morlack/axon-observability-service-allinclusive
+docker push ghcr.io/AxonIQ/axon-observability-service-auctions
+docker push ghcr.io/AxonIQ/axon-observability-service-auction-query
+docker push ghcr.io/AxonIQ/axon-observability-service-auction-object-registry
+docker push ghcr.io/AxonIQ/axon-observability-service-participants
+docker push ghcr.io/AxonIQ/axon-observability-service-interfaces
+docker push ghcr.io/AxonIQ/axon-observability-service-allinclusive
 

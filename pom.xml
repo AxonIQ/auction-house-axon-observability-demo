@@ -28,7 +28,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.2</version>
+        <version>3.1.0</version>
     </parent>
 
     <modules>
@@ -47,16 +47,16 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.axonframework.firestarter</groupId>
-            <artifactId>firestarter-spring-starter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.axoniq.inspector</groupId>
-            <artifactId>inspector-axon-spring-boot-starter</artifactId>
-            <version>0.1.8</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.axonframework.firestarter</groupId>-->
+<!--            <artifactId>firestarter-spring-starter</artifactId>-->
+<!--            <version>0.0.1-SNAPSHOT</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>io.axoniq.inspector</groupId>-->
+<!--            <artifactId>inspector-axon-spring-boot-starter</artifactId>-->
+<!--            <version>0.1.8</version>-->
+<!--        </dependency>-->
         <!-- Axon -->
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -73,10 +73,6 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-micrometer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-tracing-opentelemetry</artifactId>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>

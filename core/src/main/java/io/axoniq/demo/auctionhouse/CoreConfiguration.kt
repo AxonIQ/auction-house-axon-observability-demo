@@ -23,7 +23,8 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore
 import org.axonframework.common.transaction.TransactionManager
 import org.axonframework.config.ConfigurationScopeAwareProvider
 import org.axonframework.config.ConfigurerModule
-import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager
+import org.axonframework.deadline.DeadlineManager
+import org.axonframework.deadline.SimpleDeadlineManager
 import org.axonframework.eventhandling.PropagatingErrorHandler
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition
@@ -32,7 +33,6 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter
 import org.axonframework.serialization.Serializer
 import org.axonframework.serialization.json.JacksonSerializer
 import org.axonframework.tracing.SpanFactory
-import org.jobrunr.scheduling.JobScheduler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -41,29 +41,26 @@ import org.springframework.scheduling.annotation.EnableScheduling
 
 @Configuration
 @EnableScheduling
-@Import(MetricsConfig::class, EventProcessorSegmentMetricProvider::class)
+@Import(MetricsConfig::class)
 class CoreConfiguration {
 
     @Bean
     fun deadlineManager(
         configuration: org.axonframework.config.Configuration,
         transactionManager: TransactionManager,
-        jobScheduler: JobScheduler,
         serializer: Serializer,
         spanFactory: SpanFactory,
-    ): JobRunrDeadlineManager = JobRunrDeadlineManager.builder()
+    ): DeadlineManager = SimpleDeadlineManager.builder()
         .scopeAwareProvider(ConfigurationScopeAwareProvider(configuration))
         .transactionManager(transactionManager)
-        .jobScheduler(jobScheduler)
-        .serializer(serializer)
         .spanFactory(spanFactory)
         .build()
 
     @Bean
     fun eventBus(
-        configuraton: AxonServerConfiguration,
-        connectionManager: AxonServerConnectionManager,
-        spanFactory: SpanFactory
+            configuraton: AxonServerConfiguration,
+            connectionManager: AxonServerConnectionManager,
+            spanFactory: SpanFactory
     ) = AxonServerEventStore.builder()
         .eventSerializer(serializer())
         .snapshotSerializer(serializer())
