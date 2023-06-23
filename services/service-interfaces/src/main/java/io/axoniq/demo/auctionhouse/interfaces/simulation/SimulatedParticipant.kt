@@ -157,7 +157,7 @@ class SimulatedParticipant(
     }
 
     private fun auctionLoop() {
-        spanFactory.createRootTrace { "[$email] auctionLoop" }.run {
+        spanFactory.createRootTrace { "auctionLoop" }.run {
             maybeSellSomething()
             bidOnAuctions()
         }
@@ -209,7 +209,7 @@ class SimulatedParticipant(
         logger.debug("[$email] Want to bid $bid for current price $price on auction $update")
         if (bid > price) {
             currentBidInfo.currentBid = bid
-            spanFactory.createRootTrace { "[$email] sendBid" }.run {
+            spanFactory.createRootTrace { "sendBid" }.run {
                 logger.debug("[$email] Bidding $bid on auction $update")
                 commandGateway.send<Boolean>(PlaceBidOnAuction(update.identifier, id, bid))
             }
@@ -331,7 +331,7 @@ class SimulatedParticipant(
     }
 
     private fun initializeOwnershipQuery() {
-        spanFactory.createRootTrace { "[$email] ownerShipQuery" }.run {
+        spanFactory.createRootTrace { "ownerShipQuery" }.run {
             val query = queryGateway.subscriptionQuery(
                 GetAuctionObjects(auctionHouseId = auctionHouseId),
                 ResponseTypes.instanceOf(AuctionOwnershipResponse::class.java),
@@ -373,7 +373,7 @@ class SimulatedParticipant(
     }
 
     private fun initializeBalanceQuery() {
-        spanFactory.createRootTrace { "[$email] balanceQuery" }.run {
+        spanFactory.createRootTrace { "balanceQuery" }.run {
             val query = queryGateway.subscriptionQuery(
                 GetBalanceForParticipant(email),
                 ResponseTypes.instanceOf(Long::class.java),
