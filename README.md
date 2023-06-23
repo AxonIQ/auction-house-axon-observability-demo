@@ -12,8 +12,16 @@ Prometheus and Grafana, and [Inspector Axon](https://inspector.axoniq.io). The d
 
 ## How to run
 
-You will need to put an `axoniq.license` file in the `infrastructure` repository that contains a valid license for Axon Server EE.
+There are two versions available:
+
+- **Full**: This version runs everything including Tracing backends and a 3-node Axon Server cluster.
+- **Light**: This version runs everything except Tracing backends and Axon Server EE. This version is free to use, and also uses less resources.
+
+The docker images are updated on push to main and support both ARM64 and AMD64 architectures, so M1/M2 Mac users can use them as well.
+
+You will need to put an `axoniq.license` file in the `infrastructure/${version}` folder that contains a valid license for Axon Server EE.
 You can request a [free trial license here](https://www.axoniq.io/axon-server-trial).
+
 
 Now, you can run this demo using `docker compose`. Please execute the following:
 ```shell

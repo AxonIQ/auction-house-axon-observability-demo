@@ -23,7 +23,7 @@ services:
       retries: 30
 
   service-participants:
-    image: morlack/axon-observability-service-participants
+    image: ghcr.io/axoniq/axon-observability-participants
     ports:
       - '8900:8080'
     environment:
@@ -46,7 +46,7 @@ services:
       - '5434:5432'
 
   service-auction-object-registry:
-    image: morlack/axon-observability-service-auction-object-registry
+    image: ghcr.io/axoniq/axon-observability-auction-object-registry
     ports:
       - '8082:8080'
     environment:
@@ -69,7 +69,7 @@ services:
       - '5435:5432'
 
   service-auction-query:
-    image: morlack/axon-observability-service-auction-query
+    image: ghcr.io/axoniq/axon-observability-auction-query
     environment:
       - MM_TAG_APP=auctionquery
       - spring_datasource_url=jdbc:postgresql://db-auction-query:5432/postgres
@@ -92,7 +92,7 @@ services:
       - '5436:5432'
 
   service-auctions:
-    image: morlack/axon-observability-service-auctions
+    image: ghcr.io/axoniq/axon-observability-auctions
     ports:
       - '8084:8080'
     environment:
@@ -115,7 +115,7 @@ services:
       - '5437:5432'
 
   service-interfaces:
-    image: morlack/axon-observability-service-interfaces
+    image: ghcr.io/axoniq/axon-observability-interfaces
     ports:
       - '8087:8080'
     environment:
