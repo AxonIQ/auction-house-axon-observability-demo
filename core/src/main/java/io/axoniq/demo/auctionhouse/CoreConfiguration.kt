@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.axonframework.axonserver.connector.AxonServerConfiguration
 import org.axonframework.axonserver.connector.AxonServerConnectionManager
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore
+import org.axonframework.common.caching.Cache
+import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.common.transaction.TransactionManager
 import org.axonframework.config.ConfigurationScopeAwareProvider
 import org.axonframework.config.ConfigurerModule
@@ -87,4 +89,7 @@ class CoreConfiguration {
     @Bean
     fun snapshotTriggerDefinition(snapshotter: Snapshotter): SnapshotTriggerDefinition =
         EventCountSnapshotTriggerDefinition(snapshotter, 20)
+
+    @Bean
+    fun axonCache(): Cache = WeakReferenceCache()
 }

@@ -28,7 +28,7 @@ import org.axonframework.spring.stereotype.Aggregate
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.Instant
 
-@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition")
+@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", cache = "axonCache")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 class Auction {
     @AggregateIdentifier

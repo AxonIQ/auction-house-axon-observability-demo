@@ -23,7 +23,7 @@ import org.axonframework.modelling.command.*
 import org.axonframework.modelling.command.AggregateLifecycle.apply
 import org.axonframework.spring.stereotype.Aggregate
 
-@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition")
+@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", cache = "axonCache")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 class EmailUniquenessAggregate private constructor() {
     @AggregateIdentifier
