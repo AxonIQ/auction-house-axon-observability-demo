@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.micrometer.CapacityMonitor;
 import org.axonframework.micrometer.EventProcessorLatencyMonitor;
 import org.axonframework.micrometer.MessageCountingMonitor;
@@ -111,7 +112,8 @@ public class MetricsConfig {
                                  .meterNamePrefix("eventProcessor")
                                  .tagsBuilder(
                                          message -> Tags.of(
-                                                 TagsUtil.PROCESSOR_NAME_TAG, componentName
+                                                 TagsUtil.PROCESSOR_NAME_TAG, componentName,
+                                                 "segment", CurrentUnitOfWork.get().getResource( "Processor[" + componentName + "]/SegmentId")
                                          ))
                                  .build());
 
