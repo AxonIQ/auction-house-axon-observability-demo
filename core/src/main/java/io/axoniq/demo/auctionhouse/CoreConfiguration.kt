@@ -16,79 +16,23 @@
 
 package io.axoniq.demo.auctionhouse
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.axonframework.axonserver.connector.AxonServerConfiguration
-import org.axonframework.axonserver.connector.AxonServerConnectionManager
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore
+import tools.jackson.databind.ObjectMapper
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
-import org.axonframework.common.transaction.TransactionManager
-import org.axonframework.config.ConfigurationScopeAwareProvider
-import org.axonframework.config.ConfigurerModule
-import org.axonframework.deadline.DeadlineManager
-import org.axonframework.deadline.SimpleDeadlineManager
-import org.axonframework.eventhandling.PropagatingErrorHandler
-import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition
-import org.axonframework.eventsourcing.Snapshotter
-import org.axonframework.eventsourcing.snapshotting.SnapshotFilter
-import org.axonframework.serialization.Serializer
-import org.axonframework.serialization.json.JacksonSerializer
-import org.axonframework.tracing.SpanFactory
+import org.axonframework.conversion.Converter
+import org.axonframework.conversion.jackson.JacksonConverter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @Configuration
 @EnableScheduling
-@Import(MetricsConfig::class)
 class CoreConfiguration {
 
     @Bean
-    fun deadlineManager(
-        configuration: org.axonframework.config.Configuration,
-        transactionManager: TransactionManager,
-        serializer: Serializer,
-        spanFactory: SpanFactory,
-    ): DeadlineManager = SimpleDeadlineManager.builder()
-        .scopeAwareProvider(ConfigurationScopeAwareProvider(configuration))
-        .transactionManager(transactionManager)
-        .spanFactory(spanFactory)
-        .build()
-
-    @Bean
-    fun eventBus(
-            configuraton: AxonServerConfiguration,
-            connectionManager: AxonServerConnectionManager,
-            spanFactory: SpanFactory
-    ) = AxonServerEventStore.builder()
-        .eventSerializer(serializer())
-        .snapshotSerializer(serializer())
-        .configuration(configuraton)
-        .platformConnectionManager(connectionManager)
-        .spanFactory(spanFactory)
-        .snapshotFilter(SnapshotFilter.allowAll())
-        .build()
-
-    @Bean
     @Primary
-    fun serializer(): Serializer = JacksonSerializer.builder()
-        .lenientDeserialization()
-        .objectMapper(
-            ObjectMapper().findAndRegisterModules()
-        )
-        .build()
-
-    @Bean
-    fun configurerModule() = ConfigurerModule {
-        it.eventProcessing().registerDefaultListenerInvocationErrorHandler { PropagatingErrorHandler.INSTANCE }
-    }
-
-    @Bean
-    fun snapshotTriggerDefinition(snapshotter: Snapshotter): SnapshotTriggerDefinition =
-        EventCountSnapshotTriggerDefinition(snapshotter, 20)
+    fun converter(objectMapper: ObjectMapper): Converter = JacksonConverter(objectMapper)
 
     @Bean
     fun axonCache(): Cache = WeakReferenceCache()

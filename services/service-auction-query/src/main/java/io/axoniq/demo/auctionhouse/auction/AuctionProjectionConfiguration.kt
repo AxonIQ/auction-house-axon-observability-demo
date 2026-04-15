@@ -16,29 +16,20 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
-import org.axonframework.common.jpa.EntityManagerProvider
-import org.axonframework.common.transaction.TransactionManager
-import org.axonframework.config.Configurer
-import org.axonframework.eventhandling.EventMessage
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue
-import org.springframework.beans.factory.annotation.Autowired
+import org.axonframework.extension.spring.config.EventProcessorDefinition
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
 class AuctionProjectionConfiguration {
-    @Autowired
-    fun configure(configurer: Configurer, entityManagerProvider: EntityManagerProvider) {
-        configurer.eventProcessing().usingPooledStreamingEventProcessors { t, u ->
-            u.initialToken { it.createHeadToken() }.initialSegmentCount(2).batchSize(5)
-        }
-
-        configurer.eventProcessing().registerDeadLetterQueue("auction-query") { c ->
-            JpaSequencedDeadLetterQueue.builder<EventMessage<*>>()
-                .processingGroup("auction-query")
-                .transactionManager(c.getComponent(TransactionManager::class.java))
-                .serializer(c.eventSerializer())
-                .entityManagerProvider(entityManagerProvider)
-                .build()
-        }
+    @Bean
+    fun auctionQueryProcessorDefinition(): EventProcessorDefinition {
+        return EventProcessorDefinition.pooledStreaming("auction-query")
+            .assigningHandlers { descriptor ->
+                descriptor.beanType() == AuctionProjection::class.java
+            }
+            .customized { config ->
+                config.initialSegmentCount(2).batchSize(5)
+            }
     }
 }

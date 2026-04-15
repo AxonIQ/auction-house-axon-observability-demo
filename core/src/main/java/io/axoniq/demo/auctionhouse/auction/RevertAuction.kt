@@ -16,10 +16,9 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier
-import java.time.Instant
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class RevertAuction(
-    @TargetAggregateIdentifier val auctionId: String,
+    @TargetEntityId val auctionId: String,
     val reason: String,
 )

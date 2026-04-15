@@ -16,9 +16,11 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
+import org.axonframework.eventsourcing.annotation.EventTag
 import java.time.Instant
 
 data class AuctionEnded(
+    @EventTag("Auction")
     val auctionId: String,
     val seller: String,
     val objectId: String,

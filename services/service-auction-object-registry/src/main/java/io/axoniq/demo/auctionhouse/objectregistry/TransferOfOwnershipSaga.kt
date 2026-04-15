@@ -16,60 +16,88 @@
 
 package io.axoniq.demo.auctionhouse.objectregistry
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect
 import io.axoniq.demo.auctionhouse.auction.AuctionEnded
 import io.axoniq.demo.auctionhouse.auction.RevertAuction
 import io.axoniq.demo.auctionhouse.objectsregistry.TransferAuctionObject
-import io.axoniq.demo.auctionhouse.participants.BalanceAddedToParticipant
-import io.axoniq.demo.auctionhouse.participants.BalanceDeducted
 import io.axoniq.demo.auctionhouse.participants.DeductBalance
 import io.axoniq.demo.auctionhouse.participants.IncreaseBalance
-import org.axonframework.commandhandling.gateway.CommandGateway
-import org.axonframework.modelling.saga.EndSaga
-import org.axonframework.modelling.saga.SagaEventHandler
-import org.axonframework.modelling.saga.SagaLifecycle
-import org.axonframework.modelling.saga.StartSaga
-import org.axonframework.spring.stereotype.Saga
-import org.springframework.context.annotation.Profile
+import io.axoniq.workflow.dsl.kotlin.Kontext
+import io.axoniq.workflow.runtime.api.annotation.Workflow
+import io.axoniq.workflow.runtime.api.execution.state.WorkflowStepResult
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Component
+import kotlin.time.Duration.Companion.seconds
 
-@Saga
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-class TransferOfOwnershipSaga {
-    private lateinit var seller: String
-    private lateinit var buyer: String
-    private lateinit var objectId: String
-    private var amount: Long = 0
+@Component
+class TransferOfOwnershipSaga(
+    private val commandGateway: CommandGateway
+) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @StartSaga
-    @SagaEventHandler(associationProperty = "auctionId")
-    fun on(event: AuctionEnded, commandGateway: CommandGateway) {
-        if (event.winningParticipant == null || event.winningPrice == null ) {
-            SagaLifecycle.end()
+    @Workflow(idProperty = "auctionId", startOnEvent = "io.axoniq.demo.auctionhouse.auction.AuctionEnded")
+    fun Kontext.onExecute() {
+        logger.info("Executing TransferOfOwnershipSaga")
+        if (payload["winningParticipant"] == null) {
+            logger.info("No winner found, skipping")
             return
         }
 
 
-        seller = event.seller
-        buyer = event.winningParticipant!!
-        amount = event.winningPrice!!
-        objectId = event.objectId
-        // We need to transfer from original owner to new one
         try {
-            commandGateway.sendAndWait<Void>(DeductBalance(buyer, event.auctionId, amount))
-
+            awaitExecute("deductBalance", { ctx ->
+                commandGateway.sendAndWait(
+                    DeductBalance(
+                        payload["buyer"] as String,
+                        payload["auctionId"] as String,
+                        payload["amount"] as Long
+                    )
+                )
+            })
         } catch (e: Exception) {
-            commandGateway.sendAndWait<Void>(RevertAuction(auctionId = event.auctionId, reason = "Buyer didn't have the money!"))
+            commandGateway.sendAndWait(
+                RevertAuction(
+                    payload["auctionId"] as String,
+                    "Something went wrong during the transfer of ownership!"
+                )
+            )
+            return
         }
-    }
 
-    @SagaEventHandler(associationProperty = "reference", keyName = "auctionId")
-    fun on(event: BalanceDeducted, commandGateway: CommandGateway) {
-        commandGateway.sendAndWait<Void>(IncreaseBalance(seller, event.reference, amount))
-    }
+        logger.info("Deducted balance from ${payload["buyer"]} to ${payload["auctionId"]}")
 
-    @SagaEventHandler(associationProperty = "reference", keyName = "auctionId")
-    @EndSaga
-    fun on(event: BalanceAddedToParticipant, commandGateway: CommandGateway) {
-        commandGateway.sendAndWait<Void>(TransferAuctionObject(objectId, buyer))
+        val increaseBalance = execute(
+            stepName = "increaseBalanceOfSeller",
+            timeout = 30.seconds,
+            action = { ctx, p ->
+                commandGateway.sendAndWait(
+                    IncreaseBalance(
+                        payload["seller"] as String,
+                        payload["auctionId"] as String,
+                        payload["amount"] as Long
+                    )
+                )
+                emptyMap()
+            })
+
+        val transferObject = execute(
+            stepName = "transferObject",
+            timeout = 30.seconds,
+            action = { ctx, p ->
+                commandGateway.sendAndWait(
+                    TransferAuctionObject(
+                        payload["objectId"] as String,
+                        payload["buyer"] as String
+                    )
+                )
+                emptyMap()
+            })
+
+        // Now we can do two actions at the same time
+        allMatch(
+            predicate = WorkflowStepResult::success,
+            transferObject,
+            increaseBalance
+        )
     }
 }

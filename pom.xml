@@ -25,12 +25,6 @@
     <name>Axon Auction House Demo</name>
     <description>Parent project for the various OpenTelemetry demo applications</description>
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.0</version>
-    </parent>
-
     <modules>
         <module>core</module>
         <module>frontend</module>
@@ -39,40 +33,33 @@
     </modules>
 
     <properties>
-        <java.version>17</java.version>
-        <axon.version>4.7.4</axon.version>
-        <kotlin.version>1.7.20</kotlin.version>
-        <h2.version>1.4.200</h2.version>
+        <java.version>21</java.version>
+        <axon.version>5.1.0-RC2</axon.version>
+        <axon-workflow.version>1.0.0-SNAPSHOT</axon-workflow.version>
+        <spring-boot.version>4.0.5</spring-boot.version>
+        <kotlin.version>2.2.20</kotlin.version>
+        <h2.version>2.3.232</h2.version>
         <jib-maven-plugin.version>3.3.1</jib-maven-plugin.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.axonframework.firestarter</groupId>
-            <artifactId>firestarter-spring-starter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.axoniq.inspector</groupId>
-            <artifactId>inspector-axon-spring-boot-starter</artifactId>
-            <version>0.1.9-SNAPSHOT</version>
-        </dependency>
         <!-- Axon -->
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.axonframework.extensions.reactor</groupId>
-            <artifactId>axon-reactor-spring-boot-starter</artifactId>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axoniq.framework.workflow</groupId>
+            <artifactId>axon-workflow-spring-boot</artifactId>
+            <version>${axon-workflow.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-micrometer</artifactId>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -112,6 +99,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -120,7 +108,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
+            <groupId>tools.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
         </dependency>
     </dependencies>
@@ -128,8 +116,15 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.axonframework</groupId>
-                <artifactId>axon-bom</artifactId>
+                <artifactId>axon-framework-bom</artifactId>
                 <version>${axon.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -217,7 +212,7 @@
                         <plugin>jpa</plugin>
                         <plugin>spring</plugin>
                     </compilerPlugins>
-                    <jvmTarget>17</jvmTarget>
+                    <jvmTarget>21</jvmTarget>
                 </configuration>
                 <dependencies>
                     <dependency>

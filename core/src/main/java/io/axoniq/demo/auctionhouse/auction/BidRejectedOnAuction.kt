@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
+import org.axonframework.eventsourcing.annotation.EventTag
+
 data class BidRejectedOnAuction(
+    @EventTag("Auction")
     val auctionId: String,
     val participant: String,
     val price: Long,

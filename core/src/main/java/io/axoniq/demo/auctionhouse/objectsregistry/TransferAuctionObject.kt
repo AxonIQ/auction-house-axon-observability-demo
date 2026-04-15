@@ -16,10 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.objectsregistry
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class TransferAuctionObject(
-    @TargetAggregateIdentifier
+    @TargetEntityId
     val id: String,
     val owner: String,
 )

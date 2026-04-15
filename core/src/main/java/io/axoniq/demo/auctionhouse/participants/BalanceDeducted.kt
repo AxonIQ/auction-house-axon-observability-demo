@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
+import org.axonframework.eventsourcing.annotation.EventTag
+
 data class BalanceDeducted(
+    @EventTag("Participant")
     val id: String,
     val reference: String,
     val amount: Long,

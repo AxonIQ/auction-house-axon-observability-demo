@@ -16,75 +16,46 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect
-import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.common.IdentifierFactory
-import org.axonframework.eventsourcing.EventSourcingHandler
-import org.axonframework.modelling.command.AggregateIdentifier
-import org.axonframework.modelling.command.AggregateLifecycle.apply
-import org.axonframework.spring.stereotype.Aggregate
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.extension.spring.stereotype.EventSourced
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler
+import org.axonframework.messaging.eventhandling.gateway.EventAppender
 
-@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", cache = "axonCache")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@EventSourced(tagKey = "Participant")
 class ParticipantAggregate {
-    @AggregateIdentifier
     private lateinit var id: String
     private var email: String? = null
-    private var changingEmail: Boolean = false
     private var balance = 0L
 
-    @CommandHandler
-    constructor(command: RegisterParticipant) {
-        val id = IdentifierFactory.getInstance().generateIdentifier()
-        apply(ParticipantRegisteredAwaitingEmailConfirmation(id))
-        apply(ParticipantEmailRequested(id, command.requestedEmail))
-    }
+    @EntityCreator
+    constructor()
 
-    @CommandHandler
-    fun on(command: ChangeParticipantEmail) {
-        assert(email != null) { "Cannot change email when initial email has not been confirmed yet!" }
-        assert(!changingEmail) { "Cannot change email when already changing it!" }
-        apply(ParticipantEmailChangeRequested(command.id, email!!, command.requestedEmail))
-    }
-
-    @EventSourcingHandler
-    fun on(event: ParticipantRegisteredAwaitingEmailConfirmation) {
-        id = event.id
-    }
-
-    @CommandHandler
-    fun on(command: ConfirmParticipantEmail) {
-        val creation = email == null
-        apply(ParticipantEmailConfirmed(id, command.email))
-
-        if (creation) {
-            // New customers get 20 euros for free
-            apply(BalanceAddedToParticipant(id, "0", 5000, 5000, "New account creation"))
+    companion object {
+        @JvmStatic
+        @CommandHandler
+        fun create(command: RegisterParticipant, eventAppender: EventAppender): String? {
+            val id = IdentifierFactory.getInstance().generateIdentifier()
+            eventAppender.append(ParticipantEmailConfirmed(id, command.requestedEmail))
+            eventAppender.append(BalanceAddedToParticipant(id, "0", 5000, 5000, "New account creation"))
+            return id
         }
     }
 
     @CommandHandler
-    fun on(command: DenyParticipantEmail) {
-        apply(ParticipantEmailRequestRejected(command.id, command.email))
-        if (email != null) {
-            // Already had an email address, ignore the rejection and leave account on old email
-            return
-        }
-        // No email address. Was a creation, not a change. Close account.
-        apply(ParticipantRemoved(command.id, "Email was already in use."))
+    fun on(command: ChangeParticipantEmail, eventAppender: EventAppender) {
+        eventAppender.append(ParticipantEmailConfirmed(command.id, command.requestedEmail))
     }
 
     @CommandHandler
-    fun on(command: DeductBalance) {
-//        if (command.amount > balance) {
-//            throw IllegalStateException("Not a high enough balance! Current: $balance, needed: ${command.amount}")
-//        }
-        apply(BalanceDeducted(id, command.reference, command.amount, balance - command.amount))
+    fun on(command: DeductBalance, eventAppender: EventAppender) {
+        eventAppender.append(BalanceDeducted(id, command.reference, command.amount, balance - command.amount))
     }
 
     @CommandHandler
-    fun on(command: IncreaseBalance) {
-        apply(BalanceAddedToParticipant(id, command.reference, command.amount, balance + command.amount, ""))
+    fun on(command: IncreaseBalance, eventAppender: EventAppender) {
+        eventAppender.append(BalanceAddedToParticipant(id, command.reference, command.amount, balance + command.amount, ""))
     }
 
     @EventSourcingHandler
@@ -101,8 +72,4 @@ class ParticipantAggregate {
     fun on(event: BalanceAddedToParticipant) {
         this.balance = event.newBalance
     }
-
-    private constructor()
 }
-
-

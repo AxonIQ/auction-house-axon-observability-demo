@@ -16,10 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class PlaceBidOnAuction(
-    @TargetAggregateIdentifier val auctionId: String,
+    @TargetEntityId val auctionId: String,
     val participantId: String,
     val price: Long,
 )

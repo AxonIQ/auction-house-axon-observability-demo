@@ -16,10 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class DeductBalance(
-    @TargetAggregateIdentifier
+    @TargetEntityId
     val id: String,
     val reference: String,
     val amount: Long,

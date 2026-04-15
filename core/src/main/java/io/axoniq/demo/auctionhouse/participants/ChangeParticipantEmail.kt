@@ -16,10 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class ChangeParticipantEmail(
-    @TargetAggregateIdentifier
+    @TargetEntityId
     val id: String,
     val requestedEmail: String,
 )

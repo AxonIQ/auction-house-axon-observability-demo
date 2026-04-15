@@ -20,12 +20,14 @@ import com.github.javafaker.Faker
 import io.axoniq.demo.auctionhouse.objectsregistry.SubmitAuctionObject
 import io.axoniq.demo.auctionhouse.participants.RegisterParticipant
 import io.micrometer.core.instrument.MeterRegistry
-import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.common.IdentifierFactory
-import org.axonframework.queryhandling.QueryGateway
-import org.axonframework.queryhandling.QueryHandler
-import org.axonframework.queryhandling.QueryUpdateEmitter
-import org.axonframework.tracing.SpanFactory
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.core.MessageTypeResolver
+import org.axonframework.messaging.core.conversion.MessageConverter
+import org.axonframework.messaging.queryhandling.QueryBus
+import org.axonframework.messaging.queryhandling.SimpleQueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 
@@ -33,10 +35,14 @@ import org.springframework.stereotype.Service
 class SimulatedParticipantOrchestrator(
     private val queryGateway: QueryGateway,
     private val commandGateway: CommandGateway,
-    private val spanFactory: SpanFactory,
-    private val queryUpdateEmitter: QueryUpdateEmitter,
     private val meterRegistry: MeterRegistry,
+    private val queryBus: QueryBus,
+    private val messageTypeResolver: MessageTypeResolver,
+    private val converter: MessageConverter
 ) {
+    private val queryUpdateEmitter = SimpleQueryUpdateEmitter(
+        queryBus, messageTypeResolver, converter, NullProcessingContext()
+    )
     var auctionHouseId = IdentifierFactory.getInstance().generateIdentifier()
     private val faker = Faker()
 
@@ -68,17 +74,16 @@ class SimulatedParticipantOrchestrator(
     fun setup() {
         while (simulatedParticipants.size < desiredCount) {
             val email = "${faker.name().firstName()}@${auctionHouseId}.io"
-            val id = commandGateway.sendAndWait<String>(RegisterParticipant(email))
+            val id = commandGateway.sendAndWait(RegisterParticipant(email), String::class.java)!!
             1.rangeTo(3).forEach { _ ->
                 val name = getNewName()
-                commandGateway.sendAndWait<String>(SubmitAuctionObject(name, id, auctionHouseId))
+                commandGateway.sendAndWait(SubmitAuctionObject(name, id, auctionHouseId), String::class.java)
             }
             simulatedParticipants += SimulatedParticipant(
                 id = id,
                 email = email,
                 queryGateway = queryGateway,
                 commandGateway = commandGateway,
-                spanFactory = spanFactory,
                 auctionHouseId = auctionHouseId,
                 meterRegistry = meterRegistry
             )

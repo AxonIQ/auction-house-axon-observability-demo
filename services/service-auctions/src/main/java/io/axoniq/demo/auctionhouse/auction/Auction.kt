@@ -16,22 +16,16 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect
-import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.common.IdentifierFactory
-import org.axonframework.deadline.DeadlineManager
-import org.axonframework.deadline.annotation.DeadlineHandler
-import org.axonframework.eventsourcing.EventSourcingHandler
-import org.axonframework.modelling.command.AggregateIdentifier
-import org.axonframework.modelling.command.AggregateLifecycle
-import org.axonframework.spring.stereotype.Aggregate
-import org.springframework.beans.factory.annotation.Autowired
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.extension.spring.stereotype.EventSourced
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler
+import org.axonframework.messaging.eventhandling.gateway.EventAppender
 import java.time.Instant
 
-@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", cache = "axonCache")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@EventSourced(tagKey = "Auction")
 class Auction {
-    @AggregateIdentifier
     private lateinit var id: String
     private lateinit var objectId: String
     private lateinit var owner: String
@@ -46,24 +40,31 @@ class Auction {
         CREATED, STARTED, ENDED, REVERTED
     }
 
-    @CommandHandler
-    constructor(command: CreateAuction, @Autowired deadlineManager: DeadlineManager) {
-        val endTime = Instant.now().plusSeconds(10)
-        AggregateLifecycle.apply(
-            AuctionCreated(
-                IdentifierFactory.getInstance().generateIdentifier(),
-                command.auctionHouseId,
-                command.objectId,
-                command.owner,
-                command.minimumPrice,
-                endTime
+    @EntityCreator
+    constructor()
+
+    companion object {
+        @JvmStatic
+        @CommandHandler
+        fun create(command: CreateAuction, eventAppender: EventAppender): String? {
+            val endTime = Instant.now().plusSeconds(10)
+            val auctionId = IdentifierFactory.getInstance().generateIdentifier()
+            eventAppender.append(
+                AuctionCreated(
+                    auctionId,
+                    command.auctionHouseId,
+                    command.objectId,
+                    command.owner,
+                    command.minimumPrice,
+                    endTime
+                )
             )
-        )
-        deadlineManager.schedule(endTime, "closeAuction")
+            return auctionId
+        }
     }
 
     @CommandHandler
-    fun on(command: PlaceBidOnAuction): Boolean {
+    fun on(command: PlaceBidOnAuction, eventAppender: EventAppender): Boolean {
         if (state != State.STARTED) {
             return false
         }
@@ -74,19 +75,22 @@ class Auction {
         if (highest >= command.price) {
             return false
         }
-        AggregateLifecycle.apply(BidPlacedOnAuction(id, command.participantId, command.price))
+        eventAppender.append(BidPlacedOnAuction(id, command.participantId, command.price))
         return true
     }
 
     @CommandHandler
-    fun on(command: RevertAuction) {
-        AggregateLifecycle.apply(AuctionReverted(id, objectId, owner, command.reason))
+    fun on(command: RevertAuction, eventAppender: EventAppender) {
+        eventAppender.append(AuctionReverted(id, objectId, owner, command.reason))
     }
 
-    @DeadlineHandler(deadlineName = "closeAuction")
-    fun on() {
+    @CommandHandler
+    fun on(command: CloseAuction, eventAppender: EventAppender) {
+        if (state != State.STARTED) {
+            return
+        }
         val winningBid = bids.maxByOrNull { it.amount }
-        AggregateLifecycle.apply(
+        eventAppender.append(
             AuctionEnded(
                 auctionId = id,
                 winningParticipant = winningBid?.participantId,
@@ -122,13 +126,8 @@ class Auction {
     fun on(event: BidPlacedOnAuction) {
         bids.add(Bid(event.participant, event.price))
     }
-
-    private constructor()
 }
 
 data class Bid(
     val participantId: String, val amount: Long
 )
-
-
-

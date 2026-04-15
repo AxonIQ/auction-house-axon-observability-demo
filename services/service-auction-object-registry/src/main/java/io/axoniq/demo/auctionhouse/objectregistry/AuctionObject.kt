@@ -16,40 +16,45 @@
 
 package io.axoniq.demo.auctionhouse.objectregistry
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect
 import io.axoniq.demo.auctionhouse.objectsregistry.AuctionObjectOwnerTransferred
 import io.axoniq.demo.auctionhouse.objectsregistry.AuctionObjectSubmitted
 import io.axoniq.demo.auctionhouse.objectsregistry.SubmitAuctionObject
 import io.axoniq.demo.auctionhouse.objectsregistry.TransferAuctionObject
-import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.common.IdentifierFactory
-import org.axonframework.eventsourcing.EventSourcingHandler
-import org.axonframework.modelling.command.AggregateIdentifier
-import org.axonframework.modelling.command.AggregateLifecycle
-import org.axonframework.spring.stereotype.Aggregate
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.extension.spring.stereotype.EventSourced
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler
+import org.axonframework.messaging.eventhandling.gateway.EventAppender
 
-@Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", cache = "axonCache")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@EventSourced(tagKey = "Object")
 class AuctionObject {
-    @AggregateIdentifier
     private lateinit var id: String
     private lateinit var owner: String
 
-    @CommandHandler
-    constructor(command: SubmitAuctionObject) {
-        AggregateLifecycle.apply(
-            AuctionObjectSubmitted(
-                IdentifierFactory.getInstance().generateIdentifier(),
-                command.name,
-                command.initialOwner,
-                command.auctionHouseId,
+    @EntityCreator
+    constructor()
+
+    companion object {
+        @JvmStatic
+        @CommandHandler
+        fun create(command: SubmitAuctionObject, eventAppender: EventAppender): String? {
+            val id = IdentifierFactory.getInstance().generateIdentifier()
+            eventAppender.append(
+                AuctionObjectSubmitted(
+                    id,
+                    command.name,
+                    command.initialOwner,
+                    command.auctionHouseId,
+                )
             )
-        )
+            return id
+        }
     }
 
     @CommandHandler
-    fun on(command: TransferAuctionObject) {
-        AggregateLifecycle.apply(AuctionObjectOwnerTransferred(id, owner, command.owner))
+    fun on(command: TransferAuctionObject, eventAppender: EventAppender) {
+        eventAppender.append(AuctionObjectOwnerTransferred(id, owner, command.owner))
     }
 
     @EventSourcingHandler
@@ -62,7 +67,4 @@ class AuctionObject {
     fun on(event: AuctionObjectOwnerTransferred) {
         this.owner = event.newOwner
     }
-
-    private constructor()
 }
-

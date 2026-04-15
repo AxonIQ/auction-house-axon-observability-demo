@@ -16,6 +16,9 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
+import org.axonframework.modelling.annotation.TargetEntityId
+
 data class RegisterParticipant(
+    @TargetEntityId
     val requestedEmail: String,
 )

@@ -19,16 +19,15 @@ package io.axoniq.demo.auctionhouse.interfaces.simulation
 import io.axoniq.demo.auctionhouse.auction.*
 import io.axoniq.demo.auctionhouse.interfaces.runTask
 import io.axoniq.demo.auctionhouse.objectsregistry.AuctionOwnershipInfoItem
-import io.axoniq.demo.auctionhouse.objectsregistry.AuctionOwnershipResponse
 import io.axoniq.demo.auctionhouse.objectsregistry.GetAuctionObjects
+import reactor.core.publisher.Flux
 import io.axoniq.demo.auctionhouse.participants.GetBalanceForParticipant
 import io.axoniq.demo.auctionhouse.participants.ParticipantBalanceUpdate
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tags
-import org.axonframework.commandhandling.gateway.CommandGateway
-import org.axonframework.messaging.responsetypes.ResponseTypes
-import org.axonframework.queryhandling.QueryGateway
-import org.axonframework.tracing.SpanFactory
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway
+import org.axonframework.messaging.tracing.SpanFactory
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.scheduler.Schedulers
@@ -43,7 +42,6 @@ class SimulatedParticipant(
     private val auctionHouseId: String,
     private val queryGateway: QueryGateway,
     private val commandGateway: CommandGateway,
-    private val spanFactory: SpanFactory,
     private val meterRegistry: MeterRegistry,
 ) {
     private val biddingFactor = Math.random()
@@ -157,20 +155,19 @@ class SimulatedParticipant(
     }
 
     private fun auctionLoop() {
-        spanFactory.createRootTrace { "auctionLoop" }.run {
-            maybeSellSomething()
-            bidOnAuctions()
-        }
+        maybeSellSomething()
+        bidOnAuctions()
+
     }
 
     private val biddingGate = AtomicBoolean()
     private fun bidOnAuctions() {
-        if(biddingGate.compareAndExchange(false, true)) {
+        if (biddingGate.compareAndExchange(false, true)) {
             try {
-                queryGateway.query(
+                queryGateway.queryMany(
                     GetActiveAuctions(auctionHouseId),
-                    ResponseTypes.instanceOf(ActiveAuctionsResponse::class.java)
-                ).get().auctions.forEach { maybeBidOnAuction(it) }
+                    ActiveAuctionItem::class.java
+                ).get().forEach { maybeBidOnAuction(it) }
             } finally {
                 biddingGate.set(false)
             }
@@ -209,10 +206,9 @@ class SimulatedParticipant(
         logger.debug("[$email] Want to bid $bid for current price $price on auction $update")
         if (bid > price) {
             currentBidInfo.currentBid = bid
-            spanFactory.createRootTrace { "sendBid" }.run {
-                logger.debug("[$email] Bidding $bid on auction $update")
-                commandGateway.send<Boolean>(PlaceBidOnAuction(update.identifier, id, bid))
-            }
+            logger.debug("[$email] Bidding $bid on auction $update")
+            commandGateway.send(PlaceBidOnAuction(update.identifier, id, bid))
+
         } else {
             currentBidInfo.currentBid = 0
         }
@@ -229,13 +225,14 @@ class SimulatedParticipant(
             val minimumBid = (200 + 200 * Math.random()).toLong()
 
             try {
-                val auctionId = commandGateway.sendAndWait<String>(
+                val auctionId = commandGateway.sendAndWait(
                     CreateAuction(
                         auctionHouseId = auctionHouseId,
                         objectId = itemToAuction.identifier,
                         owner = id,
                         minimumPrice = minimumBid
-                    )
+                    ),
+                    String::class.java
                 )
 
                 auctions[itemToAuction.identifier] = ActiveAuction(
@@ -259,13 +256,12 @@ class SimulatedParticipant(
     }
 
     private fun initializeActiveAuctionQuery() {
-        val query = queryGateway.subscriptionQuery(
-            GetActiveAuctions(auctionHouseId),
-            ResponseTypes.instanceOf(ActiveAuctionsResponse::class.java),
-            ResponseTypes.instanceOf(ActiveAuctionItem::class.java)
+        this.activeAuctionSubscription = Flux.from(
+            queryGateway.subscriptionQuery(
+                GetActiveAuctions(auctionHouseId),
+                ActiveAuctionItem::class.java
+            )
         )
-
-        this.activeAuctionSubscription = query.updates()
             .publishOn(scheduler)
             .doOnError {
                 logger.error("[$email] Error in GetActiveAuctions updates", it)
@@ -274,7 +270,6 @@ class SimulatedParticipant(
             .subscribe {
                 handleAuctionUpdate(it)
             }
-
     }
 
     private fun handleAuctionUpdate(update: ActiveAuctionItem) {
@@ -331,30 +326,21 @@ class SimulatedParticipant(
     }
 
     private fun initializeOwnershipQuery() {
-        spanFactory.createRootTrace { "ownerShipQuery" }.run {
-            val query = queryGateway.subscriptionQuery(
+        this@SimulatedParticipant.ownershipSubscription = Flux.from(
+            queryGateway.subscriptionQuery(
                 GetAuctionObjects(auctionHouseId = auctionHouseId),
-                ResponseTypes.instanceOf(AuctionOwnershipResponse::class.java),
-                ResponseTypes.instanceOf(AuctionOwnershipInfoItem::class.java)
+                AuctionOwnershipInfoItem::class.java
             )
-            query.initialResult()
-                .publishOn(scheduler)
-                .doOnError {
-                    logger.error("[$email] Error in GetAuctionObjects", it)
-                    runTask(scheduler, 500) { initializeOwnershipQuery() }
-                }.subscribe {
-                    it.items
-                        .forEach { l -> handleOwnershipItem(l) }
-                }
-            this.ownershipSubscription = query.updates()
-                .publishOn(scheduler)
-                .doOnError {
-                    logger.error("[$email] Error in GetAuctionObjects updates", it)
-                    runTask(scheduler, 500) { initializeOwnershipQuery() }
-                }.subscribe {
-                    handleOwnershipItem(it)
-                }
-        }
+        )
+            .publishOn(scheduler)
+            .doOnError {
+                logger.error("[$email] Error in GetAuctionObjects", it)
+                runTask(scheduler, 500) { initializeOwnershipQuery() }
+            }
+            .subscribe {
+                handleOwnershipItem(it)
+            }
+
     }
 
     private fun handleOwnershipItem(item: AuctionOwnershipInfoItem) {
@@ -373,36 +359,27 @@ class SimulatedParticipant(
     }
 
     private fun initializeBalanceQuery() {
-        spanFactory.createRootTrace { "balanceQuery" }.run {
-            val query = queryGateway.subscriptionQuery(
+        this@SimulatedParticipant.balanceSubscription = Flux.from(
+            queryGateway.subscriptionQuery(
                 GetBalanceForParticipant(email),
-                ResponseTypes.instanceOf(Long::class.java),
-                ResponseTypes.instanceOf(ParticipantBalanceUpdate::class.java)
+                ParticipantBalanceUpdate::class.java
             )
-            query.initialResult()
-                .publishOn(scheduler)
-                .doOnError {
-                    logger.error("[$email] Error in GetBalanceForParticipant", it)
-                    runTask(scheduler, 500) { initializeBalanceQuery() }
+        )
+            .publishOn(scheduler)
+            .doOnError {
+                logger.error("[$email] Error in GetBalanceForParticipant", it)
+                runTask(scheduler, 500) { initializeBalanceQuery() }
+            }
+            .subscribe {
+                balance = it.newBalance
+                logger.debug("[$email] balance was updated for ${it.reference}")
+                if (it.update > 0) {
+                    auctions.values.firstOrNull { a -> a.auctionId == it.reference }?.markBalanceUpdated()
+                } else {
+                    bids[it.reference]?.markBalanceUpdated()
                 }
-                .subscribe { balance = it }
-            this.balanceSubscription = query.updates()
-                .publishOn(scheduler)
-                .doOnError {
-                    logger.error("[$email] Error in GetBalanceForParticipant updates", it)
-                    runTask(scheduler, 500) { initializeBalanceQuery() }
-                }
-                .subscribe {
-                    balance = it.newBalance
-                    logger.debug("[$email] balance was updated for ${it.reference}")
-                    if (it.update > 0) {
-                        auctions.values.firstOrNull { a -> a.auctionId == it.reference }?.markBalanceUpdated()
+            }
 
-                    } else {
-                        bids[it.reference]?.markBalanceUpdated()
-                    }
-                }
-        }
     }
 
     fun terminate() {

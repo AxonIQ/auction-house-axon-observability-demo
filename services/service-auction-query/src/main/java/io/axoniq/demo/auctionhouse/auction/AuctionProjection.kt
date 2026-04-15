@@ -17,20 +17,17 @@
 package io.axoniq.demo.auctionhouse.auction
 
 import io.axoniq.demo.auctionhouse.auction.*
-import org.axonframework.config.ProcessingGroup
-import org.axonframework.eventhandling.EventHandler
-import org.axonframework.queryhandling.QueryHandler
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.eventhandling.annotation.EventHandler
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler
 import org.springframework.stereotype.Service
 
 @Service
-@ProcessingGroup("auction-query")
 class AuctionProjection(
-    private val queryUpdateEmitter: QueryUpdateEmitter,
     private val repository: AuctionInfoRepository
 ) {
     @EventHandler
-    fun on(event: AuctionCreated) {
+    fun on(event: AuctionCreated, queryUpdateEmitter: QueryUpdateEmitter) {
         val auction = repository.save(
             AuctionInformation(
                 event.auctionId,
@@ -43,39 +40,38 @@ class AuctionProjection(
                 event.endTime
             )
         )
-        auction.emit()
+        auction.emit(queryUpdateEmitter)
     }
 
     @EventHandler
-    fun on(event: AuctionEnded) {
+    fun on(event: AuctionEnded, queryUpdateEmitter: QueryUpdateEmitter) {
         val auction = repository.findById(event.auctionId).orElseThrow()
         auction.state = ActiveAuctionState.ENDED
-        auction.emit()
+        auction.emit(queryUpdateEmitter)
     }
 
     @EventHandler
-    fun on(event: AuctionReverted) {
+    fun on(event: AuctionReverted, queryUpdateEmitter: QueryUpdateEmitter) {
         val auction = repository.findById(event.auctionId).orElseThrow()
         auction.state = ActiveAuctionState.REVERTED
-        auction.emit()
+        auction.emit(queryUpdateEmitter)
     }
 
     @EventHandler
-    fun on(event: BidPlacedOnAuction) {
+    fun on(event: BidPlacedOnAuction, queryUpdateEmitter: QueryUpdateEmitter) {
         val auction = repository.findById(event.auctionId).orElseThrow()
         auction.currentBid = event.price
         auction.currentBidder = event.participant
-        auction.emit()
+        auction.emit(queryUpdateEmitter)
     }
 
-    private fun AuctionInformation.emit() {
+    private fun AuctionInformation.emit(queryUpdateEmitter: QueryUpdateEmitter) {
         queryUpdateEmitter.emit(GetActiveAuctions::class.java, { it.auctionHouseId == this.auctionHouseId }, this.toDto())
-
     }
 
     @QueryHandler
-    fun on(query: GetActiveAuctions): ActiveAuctionsResponse {
-        return ActiveAuctionsResponse(repository.findAllByStateAndAuctionHouseId(ActiveAuctionState.STARTED, query.auctionHouseId).map { it.toDto() })
+    fun on(query: GetActiveAuctions): List<ActiveAuctionItem> {
+        return repository.findAllByStateAndAuctionHouseId(ActiveAuctionState.STARTED, query.auctionHouseId).map { it.toDto() }
     }
 
     fun AuctionInformation.toDto() =

@@ -16,16 +16,20 @@
 
 package io.axoniq.demo.auctionhouse.objectregistry
 
-import org.axonframework.config.Configurer
-import org.springframework.beans.factory.annotation.Autowired
+import org.axonframework.extension.spring.config.EventProcessorDefinition
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
 class AuctionObjectProjectionConfiguration {
-    @Autowired
-    fun configure(configurer: Configurer) {
-        configurer.eventProcessing().usingPooledStreamingEventProcessors { t, u ->
-            u.initialToken { it.createHeadToken() }.initialSegmentCount(2).batchSize(5)
-        }
+    @Bean
+    fun auctionObjectProcessorDefinition(): EventProcessorDefinition {
+        return EventProcessorDefinition.pooledStreaming("auction-objects")
+            .assigningHandlers { descriptor ->
+                descriptor.beanType() == AuctionObjectProjection::class.java
+            }
+            .customized { config ->
+                config.initialSegmentCount(2).batchSize(5)
+            }
     }
 }

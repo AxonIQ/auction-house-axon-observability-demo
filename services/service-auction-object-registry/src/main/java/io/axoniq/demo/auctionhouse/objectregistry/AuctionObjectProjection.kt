@@ -17,20 +17,17 @@
 package io.axoniq.demo.auctionhouse.objectregistry
 
 import io.axoniq.demo.auctionhouse.objectsregistry.*
-import org.axonframework.config.ProcessingGroup
-import org.axonframework.eventhandling.EventHandler
-import org.axonframework.queryhandling.QueryHandler
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.eventhandling.annotation.EventHandler
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler
 import org.springframework.stereotype.Service
 
 @Service
-@ProcessingGroup("auction-objects")
 class AuctionObjectProjection(
-    private val queryUpdateEmitter: QueryUpdateEmitter,
     private val repository: AuctionObjectInfoRepository
 ) {
     @EventHandler
-    fun on(event: AuctionObjectSubmitted) {
+    fun on(event: AuctionObjectSubmitted, queryUpdateEmitter: QueryUpdateEmitter) {
         val obj = repository.save(
             AuctionObjectInformation(event.id, event.name, event.owner, event.auctionHouseId)
         )
@@ -38,15 +35,15 @@ class AuctionObjectProjection(
     }
 
     @EventHandler
-    fun on(event: AuctionObjectOwnerTransferred) {
+    fun on(event: AuctionObjectOwnerTransferred, queryUpdateEmitter: QueryUpdateEmitter) {
         val obj = repository.findById(event.id).orElseThrow()
         obj.owner = event.newOwner
         queryUpdateEmitter.emit(GetAuctionObjects::class.java, { it.auctionHouseId == obj.auctionHouseId }, obj.toDto())
     }
 
     @QueryHandler
-    fun on(query: GetAuctionObjects): AuctionOwnershipResponse {
-        return AuctionOwnershipResponse(repository.findAllByAuctionHouseId(query.auctionHouseId).map { it.toDto() })
+    fun on(query: GetAuctionObjects): List<AuctionOwnershipInfoItem> {
+        return repository.findAllByAuctionHouseId(query.auctionHouseId).map { it.toDto() }
     }
 
     fun AuctionObjectInformation.toDto() = AuctionOwnershipInfoItem(identifier, name, owner)

@@ -16,14 +16,12 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
-import org.axonframework.config.ProcessingGroup
-import org.axonframework.queryhandling.QueryHandler
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 @Service
 @Profile("participant", "all")
-@ProcessingGroup("participants")
 class ParticipantProjectionAdditionalForScatterGather(
     private val repository: ParticipantInfoRepository
 ) {

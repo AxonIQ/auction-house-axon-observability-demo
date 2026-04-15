@@ -16,22 +16,19 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
-import org.axonframework.config.ProcessingGroup
-import org.axonframework.eventhandling.EventHandler
-import org.axonframework.queryhandling.QueryHandler
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.eventhandling.annotation.EventHandler
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 
 @Service
-@ProcessingGroup("participants")
 class ParticipantProjection(
-    private val queryUpdateEmitter: QueryUpdateEmitter,
     private val repository: ParticipantInfoRepository
 ) {
     @EventHandler
-    fun on(event: ParticipantEmailConfirmed) {
+    fun on(event: ParticipantEmailConfirmed, queryUpdateEmitter: QueryUpdateEmitter) {
         var existing = repository.findByIdOrNull(event.id)
         if (existing != null) {
             existing.email = event.email
@@ -46,7 +43,7 @@ class ParticipantProjection(
     }
 
     @EventHandler
-    fun on(event: BalanceAddedToParticipant) {
+    fun on(event: BalanceAddedToParticipant, queryUpdateEmitter: QueryUpdateEmitter) {
         val existing = repository.findByIdOrNull(event.id) ?: return
         existing.balance = event.newBalance
 
@@ -59,7 +56,7 @@ class ParticipantProjection(
     }
 
     @EventHandler
-    fun on(event: BalanceDeducted) {
+    fun on(event: BalanceDeducted, queryUpdateEmitter: QueryUpdateEmitter) {
         val existing = repository.findByIdOrNull(event.id) ?: return
         existing.balance = event.newBalance
 
@@ -94,7 +91,8 @@ class ParticipantProjection(
     }
 
     @QueryHandler
-    fun on(query: GetBalanceForParticipant): Long {
-        return repository.findByEmail(query.email).map { it.balance }.orElse(0)
+    fun on(query: GetBalanceForParticipant): ParticipantBalanceUpdate {
+        val balance = repository.findByEmail(query.email).map { it.balance }.orElse(0)
+        return ParticipantBalanceUpdate(0, balance, "initial")
     }
 }

@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.objectsregistry
 
+import org.axonframework.eventsourcing.annotation.EventTag
+
 data class AuctionObjectSubmitted(
+    @EventTag("Object")
     val id: String,
     val name: String,
     val owner: String,

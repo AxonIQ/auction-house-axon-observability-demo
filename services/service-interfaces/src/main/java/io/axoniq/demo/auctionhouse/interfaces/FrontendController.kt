@@ -17,23 +17,18 @@
 package io.axoniq.demo.auctionhouse.interfaces
 
 import io.axoniq.demo.auctionhouse.auction.ActiveAuctionItem
-import io.axoniq.demo.auctionhouse.auction.ActiveAuctionsResponse
 import io.axoniq.demo.auctionhouse.auction.GetActiveAuctions
 import io.axoniq.demo.auctionhouse.interfaces.simulation.GetSimulatedParticipants
-import io.axoniq.demo.auctionhouse.interfaces.simulation.SimulatedParticipantDto
 import io.axoniq.demo.auctionhouse.interfaces.simulation.SimulatedParticipantDtoResponse
 import io.axoniq.demo.auctionhouse.interfaces.simulation.SimulatedParticipantOrchestrator
 import io.axoniq.demo.auctionhouse.objectsregistry.AuctionOwnershipInfoItem
-import io.axoniq.demo.auctionhouse.objectsregistry.AuctionOwnershipResponse
 import io.axoniq.demo.auctionhouse.objectsregistry.GetAuctionObjects
-import org.axonframework.messaging.responsetypes.ResponseTypes
-import org.axonframework.queryhandling.QueryGateway
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.scheduler.Schedulers
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("api")
@@ -52,78 +47,48 @@ class FrontendController(
 
     @GetMapping("auctions")
     fun auctions(): Flux<ServerSentEvent<*>> {
-        val subscriptionQuery = queryGateway.subscriptionQuery(
-            GetActiveAuctions(orchestrator.auctionHouseId),
-            ResponseTypes.instanceOf(ActiveAuctionsResponse::class.java),
-            ResponseTypes.instanceOf(ActiveAuctionItem::class.java)
-        )
-
-        return subscriptionQuery
-            .initialResult().flatMapIterable { it.auctions }
-            .concatWith(subscriptionQuery.updates())
-            .doOnTerminate {
-                subscriptionQuery.close()
-            }
+        return Flux.from(queryGateway.subscriptionQuery(
+                GetActiveAuctions(orchestrator.auctionHouseId),
+                ActiveAuctionItem::class.java
+            ))
             .buffer(Duration.ofMillis(50))
             .asServerSentEvents()
             .withHeartbeat()
-
     }
-
 
     @GetMapping("participants")
     fun participants(): Flux<ServerSentEvent<*>> {
-        val subscriptionQuery = queryGateway.subscriptionQuery(
-            GetSimulatedParticipants(),
-            ResponseTypes.instanceOf(SimulatedParticipantDtoResponse::class.java),
-            ResponseTypes.instanceOf(SimulatedParticipantDtoResponse::class.java)
-        )
-
-        return subscriptionQuery
-            .initialResult()
+        return Flux.from(queryGateway.subscriptionQuery(
+                GetSimulatedParticipants(),
+                SimulatedParticipantDtoResponse::class.java
+            ))
             .publishOn(Schedulers.boundedElastic())
             .map { it.participants }
-            .concatWith(subscriptionQuery.updates().map { it.participants })
-            .doOnTerminate {
-                subscriptionQuery.close()
-            }
             .asServerSentEvents()
             .withHeartbeat()
-
     }
-
 
     @GetMapping("ownership")
     fun ownership(): Flux<ServerSentEvent<*>> {
-        val query = queryGateway.subscriptionQuery(
-            GetAuctionObjects(orchestrator.auctionHouseId),
-            ResponseTypes.instanceOf(AuctionOwnershipResponse::class.java),
-            ResponseTypes.instanceOf(AuctionOwnershipInfoItem::class.java)
-        )
-
-        return query.initialResult()
-            .publishOn(Schedulers.boundedElastic())
-            .flatMapIterable { it.items }
-            .concatWith(query.updates())
-            .doOnTerminate {
-                query.close()
-            }
+        return Flux.from(queryGateway.subscriptionQuery(
+                GetAuctionObjects(orchestrator.auctionHouseId),
+                AuctionOwnershipInfoItem::class.java
+            ))
             .buffer(Duration.ofMillis(50))
             .asServerSentEvents()
             .withHeartbeat()
-
     }
 }
 
 
-fun <T> Flux<T>.asServerSentEvents() = this.map { update ->
+fun <T : Any> Flux<T>.asServerSentEvents() = this.map { update ->
     ServerSentEvent.builder<T>()
         .event("message")
         .data(update)
         .build()
 }
 
-fun <T> Flux<ServerSentEvent<T>>.withHeartbeat(): Flux<ServerSentEvent<*>> {
+fun <T : Any> Flux<ServerSentEvent<T>>.withHeartbeat(): Flux<ServerSentEvent<*>> {
     return Flux.merge(this, Flux.interval(Duration.ofSeconds(2))
         .publishOn(Schedulers.boundedElastic())
         .map { _ ->

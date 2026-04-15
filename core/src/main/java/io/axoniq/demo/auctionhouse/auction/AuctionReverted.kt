@@ -16,9 +16,11 @@
 
 package io.axoniq.demo.auctionhouse.auction
 
+import org.axonframework.eventsourcing.annotation.EventTag
 import java.time.Instant
 
 data class AuctionReverted(
+    @EventTag("Auction")
     val auctionId: String,
     val objectId: String,
     val owner: String,

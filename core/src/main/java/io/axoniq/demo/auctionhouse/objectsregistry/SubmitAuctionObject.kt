@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.objectsregistry
 
+import org.axonframework.modelling.annotation.TargetEntityId
+
 data class SubmitAuctionObject(
+    @TargetEntityId
     val name: String,
     val initialOwner: String,
     val auctionHouseId: String,

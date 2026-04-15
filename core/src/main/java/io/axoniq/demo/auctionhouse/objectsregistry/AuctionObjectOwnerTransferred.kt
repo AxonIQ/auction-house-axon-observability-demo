@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.objectsregistry
 
+import org.axonframework.eventsourcing.annotation.EventTag
+
 data class AuctionObjectOwnerTransferred(
+    @EventTag("Object")
     val id: String,
     val oldOwner: String,
     val newOwner: String,

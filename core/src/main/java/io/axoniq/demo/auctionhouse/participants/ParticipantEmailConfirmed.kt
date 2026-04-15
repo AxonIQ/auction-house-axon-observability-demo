@@ -16,7 +16,10 @@
 
 package io.axoniq.demo.auctionhouse.participants
 
+import org.axonframework.eventsourcing.annotation.EventTag
+
 data class ParticipantEmailConfirmed(
+    @EventTag("Participant")
     val id: String,
     val email: String,
 )
